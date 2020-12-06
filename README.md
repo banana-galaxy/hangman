@@ -6,10 +6,10 @@ a shell based hangman game written in C with ncurses
 ![game screenshot](game_example.png)
 
 ## Build
-`gcc game.c credits.c hang.c menu.c -o hangman.exe -lncurses`
+`gcc game.c credits.c hang.c menu.c -o hangman -lncurses`
 
 ## Run
-`./hangman.exe`
+`./hangman`
 
 ## Note
 This game was built to work on Linux. It was never tested on Windows or Mac.
