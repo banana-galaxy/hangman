@@ -22,7 +22,7 @@ This game was made as a college C programming class end-of-term group project. I
 Game graphic design
 
 ### William
-Game word bank
+Game word bank and randomization
 
 ### [Viget website](https://www.viget.com/articles/game-programming-in-c-with-the-ncurses-library/)
 Introducing us to ncurses.
