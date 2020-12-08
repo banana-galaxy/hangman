@@ -12,7 +12,7 @@ a shell based hangman game written in C with ncurses
 `./hangman`
 
 ## Note
-This game was built to work on Linux. It was never tested on Windows or Mac.
+This game was built to work on Linux. It was never tested on Windows or Mac, with the exception of putty connected to a linux server on Windows.
 
 ## About
 This game was made as a college C programming class end-of-term group project. It is my first time doing a somewhat large program of any sort in C, and I'm quite pleased with it.
