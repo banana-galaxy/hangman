@@ -28,6 +28,7 @@ int currentSelected = 0;
 int menuIndex = 0;
 int currentMenu = 1;
 int play = 0;
+int mode = 0;
 
 /* Menus */
 char menuNames[3][20] = {"Main Menu", "Difficulty", "Category"};
@@ -48,7 +49,7 @@ struct Menu {
 
 struct Menu menus[] = {
     {.menuId = 1, .menuName = "Main Menu", .menuLvl = 1, 
-        .items = {"Play", " "}, .SubMenu = {2, 3, 0}},
+        .items = {"Play", "PVP", " "}, .SubMenu = {2, 3, 0}},
     {.menuId = 2, .menuName = "Difficulty", .menuLvl = 2,
         .items = {"Noob Gamer", "Casual Gamer", "Hardcore Gamer", 
                     "Nightmare lvl2020", " "}, .SubMenu = {0}},
@@ -65,18 +66,23 @@ struct Menu menus[] = {
 
 /* Display the user-chosen Category and Difficulty Level, and the 
    Quit/Pause/View Credits options in the game window */
-void InfoDisplay(char* _category, char* _level){
+void InfoDisplay(char* _category, char* _level, int pvp){
     int h, w;
     getmaxyx(stdscr, h, w);
-    if (0 == strcmp("\0", _category)){
-        mvprintw(h-4, w-10, "quit: esc");
-        mvprintw(h-2, w-11, "credits: /");
+    if (!pvp) {
+        if (0 == strcmp("\0", _category)){
+            mvprintw(h-4, w-10, "quit: esc");
+            mvprintw(h-2, w-11, "credits: /");
+        } else {
+            mvprintw(1, 1, _category);
+            int length = strlen(_category);
+            mvprintw(1, 3+length, _level);
+            mvprintw(1, w-10, "quit: esc");
+            mvprintw(1, w-20, "pause: ]");
+        }
     } else {
-        mvprintw(1, 1, _category);
-        int length = strlen(_category);
-        mvprintw(1, 3+length, _level);
-        mvprintw(1, w-10, "quit: esc");
-        mvprintw(1, w-20, "pause: ]");
+        mvprintw(h-4, w-21, "visibility toggle: /");
+        mvprintw(h-2, w-15, "confirm: Enter");
     }
 }
 
@@ -101,8 +107,8 @@ void smallDisplay(char* text, int y, int _delay) {
             move(y, w/2-length/2);
         }
         for (int i = 0; i<length; i++) {
-            addch(text[i]);
             refresh();
+            addch(text[i]);
             usleep(_delay);
         }
     }
@@ -181,7 +187,13 @@ void selectItem() {
     if (menuIndex < TotalItems) {
         switch (currentMenu) {
             case 1:
-                play = 1;
+                if (0 == menuIndex) {
+                    mode = 0;
+                    play = 1;
+                } else {
+                    mode = 1;
+                    play = 1;
+                }
                 break;
             case 2:
                 level = menuIndex;
@@ -192,7 +204,8 @@ void selectItem() {
         }
         currentMenu = 1;
     } else {
-        switch (menuIndex) {
+        currentMenu = menuIndex;
+        /*switch (menuIndex) {
             case 1:
                 currentMenu = 2;
                 break;
@@ -200,7 +213,7 @@ void selectItem() {
             case 2:
                 currentMenu = 3;
                 break;
-        }
+        }*/
     }
     menuIndex = 0;
 }
@@ -401,7 +414,7 @@ int menu() {
                 continue;
             }
 
-            InfoDisplay("\0", "\0");
+            InfoDisplay("\0", "\0", 0);
             
             if (!creditsToggle) {
                 if (easterBlink) { // set color scheme of Easter Egg if on
