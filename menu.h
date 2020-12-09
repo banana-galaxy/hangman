@@ -9,11 +9,15 @@
 #define MENU_COLOR 104
 #define ARROW_DOWN 258
 #define ARROW_UP 259
+#define ARROW_LEFT 4
+#define ARROW_RIGHT 5
 #define SPACE_KEY 32
 #define ENTER_KEY 10
 #define PAUSE_KEY 93
 #define QUIT_KEY 27
 #define CREDITS_KEY 47
+#define VISIBILITY_KEY 47
+#define BACKSPACE_KEY 7
 #define MAXH 25
 #define MAXW 80
 
@@ -21,13 +25,14 @@
 
 int level;
 int category;
+int mode;
 char levels[4][30];
 char categories[7][20];
 
 
 
 
-void InfoDisplay(char* _category, char* _level);
+void InfoDisplay(char* _category, char* _level, int pvp);
 void smallDisplay(char* text, int y, int _delay);
 int getMenuIndexByID(int id);
 int getMenuIndexByName(char* name);
