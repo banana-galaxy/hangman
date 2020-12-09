@@ -341,7 +341,7 @@ int game(char* _category, char* _level, char* keyword, int gameTimer) {
             }
 
             // Initialize display
-            InfoDisplay(_category, _level);
+            InfoDisplay(_category, _level, 0);
 
             init_color(COLOR_YELLOW, 580, 580, 580);
             init_color(COLOR_WHITE, 900, 900, 900);
@@ -452,6 +452,164 @@ int game(char* _category, char* _level, char* keyword, int gameTimer) {
     return 0;
 }
 
+
+
+/***************************/
+/*  PVP getting user word  */
+/***************************/
+
+int addToWord(char character, int _wordIndex, char* _word) {
+    int i = 0;
+    while (_word[i] != '\0') {
+        i++;
+    }
+
+    while (i > _wordIndex) {
+        _word[i] = _word[i-1];
+        i--;
+    }
+
+    _word[i] = character;
+
+    return _wordIndex+1;
+}
+
+int goRight(int _wordIndex, char* _word) {
+    if (_word[_wordIndex] != 0) {
+        return _wordIndex+1;
+    } else {
+        return _wordIndex;
+    }
+}
+
+int goLeft(int _wordIndex) {
+    if (_wordIndex > 0) {
+        return _wordIndex-1;
+    } else {
+        return _wordIndex;
+    }
+}
+
+int toggleVisibility(int _visible) {
+    if (_visible) {
+        return 0;
+    } else {
+        return 1;
+    }
+}
+
+int removeChar(int _wordIndex, char* _word) {
+    int i = _wordIndex-1;
+    while (i < strlen(_word)) {
+        _word[i] = _word[i+1];
+        i++;
+    }
+    return goLeft(_wordIndex);
+}
+
+void pvpDisplay(char* _word, int _wordIndex, int _visible) {
+    int h, w;
+    getmaxyx(stdscr, h, w);
+    int y = h/2;
+    int x = w/3;
+
+    mvprintw(y, x-6, "word:");
+
+    move(y, x);
+    for (int i = 0; i<=strlen(_word); i++) {
+        if (i == _wordIndex) {
+            attron(A_UNDERLINE);
+        }
+        if (_visible && i < strlen(_word)) {
+            addch(_word[i]);
+        } else if (i == strlen(_word)) {
+            addch(' ');
+        } else if (!_visible) {
+            addch('*');
+        }
+        attroff(A_UNDERLINE);
+    }
+
+    InfoDisplay("\0","\0",1);
+}
+
+char* getUserWord(char* _word) {
+    char _inp_char;
+    int wordIndex = 0;
+    int visible = 0;
+    int _change = 1;
+    int h, w, preh, prew;
+    getmaxyx(stdscr, h, w);
+    preh = h;
+    prew = w;
+    char typedChar = -1;
+    while (1) {
+        getmaxyx(stdscr, h, w);
+
+        _inp_char = getch();
+
+        if (-1 != _inp_char) {
+            typedChar = _inp_char;
+        }
+
+        if ('a' <= _inp_char && 'z' >= _inp_char) {
+            _inp_char = toupper(_inp_char);
+        }
+
+        if (ARROW_LEFT == _inp_char) {
+            wordIndex = goLeft(wordIndex);
+            _change = 1;
+        } else if (ARROW_RIGHT == _inp_char) {
+            wordIndex = goRight(wordIndex, _word);
+            _change = 1;
+        } else if (VISIBILITY_KEY == _inp_char) {
+            visible = toggleVisibility(visible);
+            _change = 1;
+        } else if (BACKSPACE_KEY == _inp_char) {
+            wordIndex = removeChar(wordIndex, _word);
+            _change = 1;
+        } else if (ENTER_KEY == _inp_char) {
+            return _word;
+        } else if (32 <= _inp_char && 96 >= _inp_char) {
+            wordIndex = addToWord(_inp_char, wordIndex, _word);
+            _change = 1;
+        }
+
+        if (preh != h || prew != w) {
+            _change = 1;
+        }
+
+        if (_change) {
+            clear();
+
+            if (w < MAXW && h < MAXH) {
+                smallDisplay("Window too small, please resize.", 0, 0);
+                _change = 0;
+                continue;
+
+            } else if (h < MAXH) {
+                smallDisplay("Window height too small, please resize.", 0, 0);
+                _change = 0;
+                continue;
+
+            } else if (w < MAXW) {
+                smallDisplay("Window width too small, please resize.", 0, 0);
+                _change = 0;
+                continue;
+            }
+
+            pvpDisplay(_word, wordIndex, visible);
+            refresh();
+            _change = 0;
+        }
+
+        preh = h;
+        prew = w;
+    }
+}
+
+
+
 // Main function
 int main() {
     initscr();
@@ -464,64 +622,74 @@ int main() {
 
     while (!stop) {
         stop = menu();
-        
-        int seconds;
 
-        // Assign amount of time to guess based on difficulty level
-        switch (level) {
-            case 0:
-                seconds = 0;
-                break;
 
-            case 1:
-                seconds = 60*3;
-                break;
-
-            case 2:
-                seconds = 60;
-                break;
-
-            case 3:
-                seconds = 10;
-                break;
-        }
-
-        // Assign random word as the puzzle based on category chosen
         char word[100] = "";
-        srand(time(0));
-        switch (category) {
-            case 0:
-                strcpy(word, anilib[rand()%anilib_sz]);
-                break;
 
-            case 1:
-                strcpy(word, clib[rand()%clib_sz]);
-                break;
-            
-            case 2:
-                strcpy(word, countlib[rand()%countlib_sz]);
-                break;
 
-            case 3:
-                strcpy(word, linglib[rand()%linglib_sz]);
-                break;
-
-            case 4:
-                strcpy(word, lwlib[rand()%lwlib_sz]);
-                break;
-
-            case 5:
-                strcpy(word, prolib[rand()%prolib_sz]);
-                break;
-
-            case 6:
-                strcpy(word, capitalslib[rand()%capitalslib_sz]);
-                break;
-        }
-
-        // If user has not selected to exit, play the game
         if (!stop) {
-            stop = game(categories[category], levels[level], word, seconds);
+            if (0 == mode) {
+            
+                int seconds;
+
+                // Assign amount of time to guess based on difficulty level
+                switch (level) {
+                    case 0:
+                        seconds = 0;
+                        break;
+
+                    case 1:
+                        seconds = 60*3;
+                        break;
+
+                    case 2:
+                        seconds = 60;
+                        break;
+
+                    case 3:
+                        seconds = 10;
+                        break;
+                }
+
+                // Assign random word as the puzzle based on category chosen
+                srand(time(0));
+                switch (category) {
+                    case 0:
+                        strcpy(word, anilib[rand()%anilib_sz]);
+                        break;
+
+                    case 1:
+                        strcpy(word, clib[rand()%clib_sz]);
+                        break;
+                    
+                    case 2:
+                        strcpy(word, countlib[rand()%countlib_sz]);
+                        break;
+
+                    case 3:
+                        strcpy(word, linglib[rand()%linglib_sz]);
+                        break;
+
+                    case 4:
+                        strcpy(word, lwlib[rand()%lwlib_sz]);
+                        break;
+
+                    case 5:
+                        strcpy(word, prolib[rand()%prolib_sz]);
+                        break;
+
+                    case 6:
+                        strcpy(word, capitalslib[rand()%capitalslib_sz]);
+                        break;
+                }
+
+                // If user has not selected to exit, play the game
+                stop = game(categories[category], levels[level], word, seconds);
+
+            } else if (1 == mode) {
+                strcpy(word, getUserWord(word));
+                stop = game("Player word", "PVP", word, 0);
+            }
         }
     }
     endwin();
