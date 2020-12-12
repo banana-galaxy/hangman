@@ -374,7 +374,7 @@ int menu() {
 
         // Set arrow keys as navigation and space key as selector 
         // when not in the credits screen
-        if (!creditsToggle) {
+        if (!creditsToggle && (w >= MAXW && h >= MAXH)) {
             if (ARROW_DOWN == inp_char){
                 moveDown();
                 _change = 1;
