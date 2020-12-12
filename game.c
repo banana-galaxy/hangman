@@ -458,6 +458,27 @@ int game(char* _category, char* _level, char* keyword, int gameTimer) {
 /*  PVP getting user word  */
 /***************************/
 
+
+struct Field {
+    char buffer[100];
+    int integerVersion;
+    int inputIndex;
+    int highlightIndex;
+};
+
+struct Field fields[] = {
+    {.buffer = "", .inputIndex = 0, .highlightIndex = 0},
+    {.buffer = "", .inputIndex = 0, .highlightIndex = 0, .integerVersion = 0}
+};
+
+void resetFields() {
+    for (int i = 0; i < 2; i++) {
+        stringReset(fields[i].buffer);
+        fields[i].inputIndex = 0;
+    }
+    fields[1].integerVersion = 0;
+}
+
 int addToWord(char character, int _wordIndex, char* _word) {
     int i = 0;
     while (_word[i] != '\0') {
@@ -490,8 +511,8 @@ int goLeft(int _wordIndex) {
     }
 }
 
-int toggleVisibility(int _visible) {
-    if (_visible) {
+int toggle(int someVar) {
+    if (someVar) {
         return 0;
     } else {
         return 1;
@@ -507,22 +528,26 @@ int removeChar(int _wordIndex, char* _word) {
     return goLeft(_wordIndex);
 }
 
-void pvpDisplay(char* _word, int _wordIndex, int _visible) {
+void pvpDisplay(struct Field *_fields, int currentField, int _visible) {
     int h, w;
     getmaxyx(stdscr, h, w);
     int y = h/2;
     int x = w/3;
 
+    smallDisplay("press TAB to switch input field", 2, 0);
+
     mvprintw(y, x-6, "word:");
 
+
     move(y, x);
-    for (int i = 0; i<=strlen(_word); i++) {
-        if (i == _wordIndex) {
+
+    for (int i = 0; i<=strlen(_fields[0].buffer); i++) {
+        if (i == _fields[0].inputIndex && 0 == currentField) {
             attron(A_UNDERLINE);
         }
-        if (_visible && i < strlen(_word)) {
-            addch(_word[i]);
-        } else if (i == strlen(_word)) {
+        if (_visible && i < strlen(_fields[0].buffer)) {
+            addch(_fields[0].buffer[i]);
+        } else if (i == strlen(_fields[0].buffer)) {
             addch(' ');
         } else if (!_visible) {
             addch('*');
@@ -530,49 +555,80 @@ void pvpDisplay(char* _word, int _wordIndex, int _visible) {
         attroff(A_UNDERLINE);
     }
 
+
+    y += 2;
+
+    mvprintw(y, x-14, "time allowed:");
+    move(y, x);
+
+    if (0 == strlen(_fields[1].buffer)) {
+        printw("None (no time limit)");
+    }
+    for (int i = 0; i<=strlen(_fields[1].buffer); i++) {
+        if (i == _fields[1].inputIndex && 1 == currentField) {
+            attron(A_UNDERLINE);
+        }
+        if (i < strlen(_fields[1].buffer)) {
+            addch(_fields[1].buffer[i]);
+        } else if (i == strlen(_fields[1].buffer)) {
+            addch(' ');
+        }
+        attroff(A_UNDERLINE);
+    }
+
+
     InfoDisplay("\0","\0",1);
 }
 
-char* getUserWord(char* _word) {
+void getUserWord() {
     char _inp_char;
     int wordIndex = 0;
     int visible = 0;
     int _change = 1;
+    int inputType = 0;
     int h, w, preh, prew;
     getmaxyx(stdscr, h, w);
     preh = h;
     prew = w;
-    char typedChar = -1;
     while (1) {
         getmaxyx(stdscr, h, w);
 
         _inp_char = getch();
 
-        if (-1 != _inp_char) {
-            typedChar = _inp_char;
-        }
-
         if ('a' <= _inp_char && 'z' >= _inp_char) {
             _inp_char = toupper(_inp_char);
         }
 
-        if (ARROW_LEFT == _inp_char) {
-            wordIndex = goLeft(wordIndex);
-            _change = 1;
-        } else if (ARROW_RIGHT == _inp_char) {
-            wordIndex = goRight(wordIndex, _word);
-            _change = 1;
-        } else if (VISIBILITY_KEY == _inp_char) {
-            visible = toggleVisibility(visible);
-            _change = 1;
-        } else if (BACKSPACE_KEY == _inp_char) {
-            wordIndex = removeChar(wordIndex, _word);
-            _change = 1;
-        } else if (ENTER_KEY == _inp_char) {
-            return _word;
-        } else if (32 <= _inp_char && 96 >= _inp_char) {
-            wordIndex = addToWord(_inp_char, wordIndex, _word);
-            _change = 1;
+        if (w >= MAXW || h >= MAXH) {
+            if (ARROW_LEFT == _inp_char) {
+                fields[inputType].inputIndex = goLeft(fields[inputType].inputIndex);
+                _change = 1;
+            } else if (ARROW_RIGHT == _inp_char) {
+                fields[inputType].inputIndex = goRight(fields[inputType].inputIndex, fields[inputType].buffer);
+                _change = 1;
+            } else if (VISIBILITY_KEY == _inp_char) {
+                if (!inputType) {
+                    visible = toggle(visible);
+                }
+                _change = 1;
+            } else if (BACKSPACE_KEY == _inp_char) {
+                fields[inputType].inputIndex = removeChar(fields[inputType].inputIndex, fields[inputType].buffer);
+                _change = 1;
+            } else if (TAB_KEY == _inp_char) {
+                inputType = toggle(inputType);
+                _change = 1;
+            } else if (ENTER_KEY == _inp_char) {
+                if (1 <= strlen(fields[1].buffer)) {
+                    fields[1].integerVersion = atoi(fields[1].buffer);
+                }
+                return;
+            } else if ((32 <= _inp_char && 96 >= _inp_char) && 0 == inputType) {
+                fields[0].inputIndex = addToWord(_inp_char, fields[0].inputIndex, fields[0].buffer);
+                _change = 1;
+            } else if (('0' <= _inp_char && '9' >= _inp_char) && 1 == inputType) {
+                fields[1].inputIndex = addToWord(_inp_char, fields[1].inputIndex, fields[1].buffer);
+                _change = 1;
+            }
         }
 
         if (preh != h || prew != w) {
@@ -598,7 +654,7 @@ char* getUserWord(char* _word) {
                 continue;
             }
 
-            pvpDisplay(_word, wordIndex, visible);
+            pvpDisplay(fields, inputType, visible);
             refresh();
             _change = 0;
         }
@@ -621,6 +677,8 @@ int main() {
     int stop = 0;
 
     while (!stop) {
+        resetFields();
+
         stop = menu();
 
 
@@ -687,8 +745,9 @@ int main() {
                 stop = game(categories[category], levels[level], word, seconds);
 
             } else if (1 == mode) {
-                strcpy(word, getUserWord(word));
-                stop = game("Player word", "PVP", word, 0);
+                getUserWord();
+                strcpy(word, fields[0].buffer);
+                stop = game("Player word", "PVP", word, fields[1].integerVersion);
             }
         }
     }
