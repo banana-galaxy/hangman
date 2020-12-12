@@ -11,6 +11,9 @@
 #define ARROW_UP 259
 #define ARROW_LEFT 4
 #define ARROW_RIGHT 5
+#define SHIFT_LEFT -119
+#define SHIFT_RIGHT -110
+#define HIGHLIGHT_ALL 1
 #define SPACE_KEY 32
 #define ENTER_KEY 10
 #define PAUSE_KEY 93
@@ -18,6 +21,7 @@
 #define CREDITS_KEY 47
 #define VISIBILITY_KEY 47
 #define BACKSPACE_KEY 7
+#define TAB_KEY 9
 #define MAXH 25
 #define MAXW 80
 
